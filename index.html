@@ -159,38 +159,41 @@
     });
   }
 
-  // کتاب کھولنے کا فنکشن
-  async function openBook(book) {
-    currentActiveBook = book;
-    document.getElementById('viewing-book-title').innerText = book.title;
-    document.getElementById('pdf-view-page').style.display = 'block';
-    
-    let statusText = document.getElementById('status-text');
-    statusText.style.display = 'block';
-    statusText.innerText = "کتاب لوڈ ہو رہی ہے...";
+  // کتاب کھولنے کا فنکشن (اپڈیٹ شدہ)
+async function openBook(book) {
+  currentActiveBook = book;
+  document.getElementById('viewing-book-title').innerText = book.title;
+  document.getElementById('pdf-view-page').style.display = 'block';
+  
+  let statusText = document.getElementById('status-text');
+  statusText.style.display = 'block';
+  statusText.innerText = "کتاب لوڈ ہو رہی ہے...";
 
-    if ('caches' in window) {
-      let cache = await caches.open(CACHE_NAME);
-      let cachedResponse = await cache.match(book.download_link);
+  if ('caches' in window) {
+    let cache = await caches.open(CACHE_NAME);
+    let cachedResponse = await cache.match(book.download_link);
+    
+    if (cachedResponse) {
+      let blob = await cachedResponse.blob();
       
-      if (cachedResponse) {
-        let blob = await cachedResponse.blob();
-        let localUrl = URL.createObjectURL(blob);
-        document.getElementById('pdf-frame').src = localUrl;
-        statusText.innerText = "⚡ یہ کتاب آف لائن موبائل اسٹوریج سے کھلی ہے!";
-        document.getElementById('downloadBtn').innerText = "✅ ڈاؤن لوڈ شدہ";
-        return;
-      }
+      // اہم بدلاؤ: یہاں ہم فائل کو 'application/pdf' کی قسم دے کر پڑھیں گے
+      let file = new File([blob], "book.pdf", { type: "application/pdf" });
+      let localUrl = URL.createObjectURL(file);
+      
+      document.getElementById('pdf-frame').src = localUrl;
+      statusText.innerText = "⚡ یہ کتاب آف لائن موبائل اسٹوریج سے کھلی ہے!";
+      document.getElementById('downloadBtn').innerText = "✅ ڈاؤن لوڈ شدہ";
+      return;
     }
-
-    // اگر آف لائن نہیں ہے تو آن لائن پری ویو دکھائیں
-    document.getElementById('pdf-frame').src = book.preview_link; 
-    statusText.innerText = "🌐 یہ کتاب آن لائن چل رہی ہے...";
-    document.getElementById('downloadBtn').innerText = "📥 ڈاؤن لوڈ کریں";
-    
-    document.getElementById('downloadBtn').onclick = () => downloadFile(book);
   }
 
+  // اگر آف لائن نہیں ہے تو آن لائن پری ویو دکھائیں
+  document.getElementById('pdf-frame').src = book.preview_link; 
+  statusText.innerText = "🌐 یہ کتاب آن لائن چل رہی ہے...";
+  document.getElementById('downloadBtn').innerText = "📥 ڈاؤن لوڈ کریں";
+  
+  document.getElementById('downloadBtn').onclick = () => downloadFile(book);
+  }
   // کتاب ڈاؤن لوڈ کرنے کا فنکشن
   async function downloadFile(book) {
     let statusText = document.getElementById('status-text');
