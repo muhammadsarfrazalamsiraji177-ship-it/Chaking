@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="ur" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>درس اسلامی لائبریری</title>
+  <style>
+    body { font-family: sans-serif; background-color: #cae8eb; margin: 0; padding: 10px; text-align: center; }
+    .container { max-width: 360px; margin: auto; background: white; border-radius: 15px; padding: 20px; border: 2px solid #004d26; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+    
+    .top-search-bar { width: 95%; padding: 12px; border-radius: 25px; border: 2px solid #004d26; margin: 10px 0 20px 0; text-align: center; font-size: 16px; outline: none; box-shadow: inset 0 2px 4px rgba(0,0,0,0.1); }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 20px 0; }
+    
+    button { padding: 15px 10px; background: black; color: white; border-radius: 25px; border: none; cursor: pointer; font-size: 15px; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.3); transition: 0.2s; }
+    button:active { transform: scale(0.95); }
+    
+    .page { display: none; }
+    #home-page { display: block; }
+    
+    #pdf-view-page { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 9999; }
+    iframe { width: 100%; height: calc(100% - 60px); border: none; background: white; }
+    
+    .viewer-header { height: 60px; background: #004d26; color: white; display: flex; justify-content: space-between; align-items: center; padding: 0 10px; box-sizing: border-box; }
+    .viewer-header span { font-size: 14px; max-width: 40%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .btn-download { background: #007bff; color: white; padding: 8px 12px; border-radius: 5px; font-size: 12px; }
+    .btn-close { background: red; color: white; padding: 8px 12px; border-radius: 5px; font-size: 12px; }
+    
+    .back-btn { background: #555; width: 100%; margin-top: 15px; }
+    .download-status { color: #004d26; font-weight: bold; margin-top: 5px; font-size: 13px; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  
+  <div id="home-page" class="page">
+    <input type="text" class="top-search-bar" id="searchBar" placeholder="🔍 کتاب کا نام یہاں تلاش کریں..." onkeyup="searchBooks()">
+    
+    <div class="grid">
+      <button onclick="showPage('jamat-page')">درس نظامی</button>
+      <button onclick="showPage('hadees-books-page')">حدیث مبارکہ</button>
+      <button onclick="renderBooks('kitaben', 'cat')">کتابوں کا مجموعہ</button>
+      <button onclick="showPage('taqreer-page')">نعت و تقریر</button>
+      <button onclick="renderBooks('msail', 'cat')">ضروری مسائل</button>
+      <button onclick="renderBooks('dua', 'cat')">دعائیں</button>
+    </div>
+    
+    <button onclick="renderDownloads()" style="width: 100%; background: #004d26; padding: 18px; margin-top: 10px; font-size: 16px;">📥 ڈاؤن لوڈ کی گئی کتابیں</button>
+  </div>
+
+  <div id="jamat-page" class="page">
+    <h3>جماعت منتخب کریں</h3>
+    <div class="grid">
+        <button onclick="renderBooks('اعدادیہ','jamat')">اعدادیہ</button>
+        <button onclick="renderBooks('اولیٰ', 'jamat')">اولیٰ</button>
+        <button onclick="renderBooks('ثانیہ', 'jamat')">ثانیہ</button>
+        <button onclick="renderBooks('ثالثہ', 'jamat')">ثالثہ</button>
+        <button onclick="renderBooks('رابعہ', 'jamat')">رابعہ</button>
+        <button onclick="renderBooks('خامسہ', 'jamat')">خامسہ</button>
+        <button onclick="renderBooks('سادسہ', 'jamat')">سادسہ</button>
+        <button onclick="renderBooks('سابعہ', 'jamat')">سابعہ</button>
+    </div>
+    <button class="back-btn" onclick="showPage('home-page')">🏠 ہوم پیج</button>
+  </div>
+
+  <div id="taqreer-page" class="page">
+    <h3>انتخاب کریں</h3>
+    <div class="grid">
+      <button onclick="renderBooks('نعت','sub_cat')">نعت کی کتابیں</button>
+      <button onclick="renderBooks('تقرير','sub_cat')">تقریر کی کتابیں</button>
+    </div>
+    <button class="back-btn" onclick="showPage('home-page')">🏠 ہوم پیج</button>
+  </div>
+
+  <div id="hadees-books-page" class="page">
+    <h3>کتاب منتخب کریں</h3>
+    <div class="grid">
+      <button onclick="renderBooks('مشکوٰۃ شریف', 'book_name')">مشکوٰۃ شریف</button>
+    </div>
+    <button class="back-btn" onclick="showPage('home-page')">🏠 ہوم پیج</button>
+  </div>
+
+  <div id="books-list-page" class="page">
+    <h3 id="list-title">کتابیں</h3>
+    <div id="books-list" class="grid"></div>
+    <button class="back-btn" onclick="showPage('home-page')">⬅ واپس ہوم پیج</button>
+  </div>
+
+</div>
+
+<div id="pdf-view-page">
+  <div class="viewer-header">
+    <button class="btn-close" onclick="closeViewer()">بند کریں</button>
+    <span id="viewing-book-title">کتاب کا نام</span>
+    <button class="btn-download" id="downloadBtn">ڈاؤن لوڈ کریں</button>
+  </div>
+  <div id="status-text" class="download-status" style="background: white; margin: 0; padding: 2px; display: none;"></div>
+  <iframe id="pdf-frame" src=""></iframe>
+</div>
+
+<script>
+  // کتابوں کا ڈیٹا بیس - یہاں دونوں لنکس الگ الگ ڈالیں
+  const allBooks = [
+    {
+      title: "فارسی کی پہلی", 
+      cat: "dars", 
+      jamat: "اعدادیہ", 
+      preview_link: "https://drive.google.com/file/d/1OFPNK20yHzz9tOSBSgKOIKqU2Pzetrxa/preview", // آن لائن دیکھنے کے لیے
+      download_link: "https://drive.google.com/uc?export=download&id=1QaXSNa565dAvasjIIZByVZ40lvZWL_gG" // تیز ڈاؤن لوڈنگ کے لیے ڈائریکٹ لنک
+    }
+  ];
+
+  let currentActiveBook = null;
+  const CACHE_NAME = 'islamic-books-cache-v1';
+
+  function showPage(id) {
+    document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
+    document.getElementById(id).style.display = 'block';
+  }
+
+  function renderBooks(filter, type) {
+    showPage('books-list-page');
+    let list = document.getElementById('books-list');
+    list.innerHTML = "";
+    
+    let filtered = allBooks.filter(b => {
+        if(type === 'jamat') return b.jamat === filter;
+        if(type === 'sub_cat') return b.sub_cat === filter;
+        if(type === 'book_name') return b.book_name === filter;
+        return b.cat === filter;
+    });
+
+    document.getElementById('list-title').innerText = filter;
+
+    filtered.forEach(b => {
+      let btn = document.createElement('button');
+      btn.innerHTML = "📖 " + b.title;
+      btn.onclick = () => openBook(b);
+      list.appendChild(btn);
+    });
+  }
+
+  function searchBooks() {
+    let query = document.getElementById('searchBar').value.trim().toLowerCase();
+    let list = document.getElementById('books-list');
+    
+    if (query === "") { showPage('home-page'); return; }
+
+    showPage('books-list-page');
+    document.getElementById('list-title').innerText = "تلاش کے نتائج...";
+    list.innerHTML = "";
+
+    let filtered = allBooks.filter(b => b.title.toLowerCase().includes(query));
+    filtered.forEach(b => {
+      let btn = document.createElement('button');
+      btn.innerHTML = "📖 " + b.title;
+      btn.onclick = () => openBook(b);
+      list.appendChild(btn);
+    });
+  }
+
+  // کتاب کھولنے کا فنکشن
+  async function openBook(book) {
+    currentActiveBook = book;
+    document.getElementById('viewing-book-title').innerText = book.title;
+    document.getElementById('pdf-view-page').style.display = 'block';
+    
+    let statusText = document.getElementById('status-text');
+    statusText.style.display = 'block';
+    statusText.innerText = "کتاب لوڈ ہو رہی ہے...";
+
+    if ('caches' in window) {
+      let cache = await caches.open(CACHE_NAME);
+      let cachedResponse = await cache.match(book.download_link);
+      
+      if (cachedResponse) {
+        let blob = await cachedResponse.blob();
+        let localUrl = URL.createObjectURL(blob);
+        document.getElementById('pdf-frame').src = localUrl;
+        statusText.innerText = "⚡ یہ کتاب آف لائن موبائل اسٹوریج سے کھلی ہے!";
+        document.getElementById('downloadBtn').innerText = "✅ ڈاؤن لوڈ شدہ";
+        return;
+      }
+    }
+
+    // اگر آف لائن نہیں ہے تو آن لائن پری ویو دکھائیں
+    document.getElementById('pdf-frame').src = book.preview_link; 
+    statusText.innerText = "🌐 یہ کتاب آن لائن چل رہی ہے...";
+    document.getElementById('downloadBtn').innerText = "📥 ڈاؤن لوڈ کریں";
+    
+    document.getElementById('downloadBtn').onclick = () => downloadFile(book);
+  }
+
+  // کتاب ڈاؤن لوڈ کرنے کا فنکشن
+  async function downloadFile(book) {
+    let statusText = document.getElementById('status-text');
+    document.getElementById('downloadBtn').innerText = "⏳ ڈاؤن لوڈ ہو رہا ہے...";
+    statusText.innerText = "فائل موبائل اسٹوریج میں محفوظ ہو رہی ہے، براہ کرم انتظار کریں...";
+
+    try {
+      let response = await fetch(book.download_link);
+      if (!response.ok) throw new Error("Network error");
+
+      let cache = await caches.open(CACHE_NAME);
+      await cache.put(book.download_link, response);
+
+      let dList = JSON.parse(localStorage.getItem('savedBooksList') || '[]');
+      if (!dList.includes(book.title)) {
+        dList.push(book.title);
+        localStorage.setItem('savedBooksList', JSON.stringify(dList));
+      }
+
+      document.getElementById('downloadBtn').innerText = "✅ ڈاؤن لوڈ شدہ";
+      statusText.innerText = "🎉 کتاب کامیابی سے ڈاؤن لوڈ ہو گئی اور محفوظ کر لی گئی ہے!";
+    } catch (error) {
+      alert("ڈاؤن لوڈ کرنے میں مسئلہ آیا۔ براہ کرم انٹرنیٹ یا لنک چیک کریں!");
+      document.getElementById('downloadBtn').innerText = "📥 دوبارہ کوشش کریں";
+    }
+  }
+
+  // ڈاؤن لوڈ پیج دکھانے کا فنکشن
+  function renderDownloads() {
+    showPage('books-list-page');
+    document.getElementById('list-title').innerText = "📥 ڈاؤن لوڈ کی گئی کتابیں (آف لائن)";
+    let list = document.getElementById('books-list');
+    list.innerHTML = "";
+    
+    let dList = JSON.parse(localStorage.getItem('savedBooksList') || '[]');
+    
+    if(dList.length === 0) {
+        list.innerHTML = "<p style='grid-column:1/3;color:red;'>ابھی تک کوئی کتاب ڈاؤن لوڈ نہیں کی گئی!</p>";
+        return;
+    }
+
+    dList.forEach(title => {
+      let b = allBooks.find(x => x.title === title);
+      if(b) {
+        let btn = document.createElement('button');
+        btn.innerHTML = "💾 " + title;
+        btn.onclick = () => openBook(b);
+        list.appendChild(btn);
+      }
+    });
+  }
+
+  function closeViewer() { 
+    document.getElementById('pdf-view-page').style.display = 'none'; 
+    document.getElementById('pdf-frame').src = "";
+  }
+</script>
+
+</body>
+</html>
